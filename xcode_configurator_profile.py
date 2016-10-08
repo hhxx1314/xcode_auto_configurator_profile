@@ -22,6 +22,7 @@
 
 #!/usr/bin/python
 
+
 from mod_pbxproj import XcodeProject
 import sys
 import json
@@ -41,8 +42,8 @@ class Configuration:
             self.jsonContent = json.load(data_file)
 
 
-if len(sys.argv) < 2:
-    raise Exception("need project.pbxproj file path")
+#if len(sys.argv) < 2:
+#raise Exception("need project.pbxproj file path")
 
 
 #read the file path
@@ -52,16 +53,14 @@ if len(sys.argv) > 2:
     jsonFiles = list(sys.argv)
     del jsonFiles[0:2]
 else:
-    jsonFiles = ["release.json"]
+    jsonFiles = ["profile.json"]
 
-print jsonFiles
 #print "jsonFiles"
 
 #create configuration objects
 dictOfConfig = dict();
 for file in jsonFiles:
     config = Configuration(file)
-    print config
     dictOfConfig[config.name] = config
 
 #load project file and create a backup
@@ -71,40 +70,38 @@ project.backup()
 rootObject = project["rootObject"]
 
 projectObject = project["objects"][rootObject]["targets"]
-print "###"
-print projectObject
+
 
 buildConfigurationLists = []
 for id in projectObject:
     buildConfigurationList = project["objects"][id]["buildConfigurationList"]
-    print buildConfigurationList
     buildConfigurationLists.append(buildConfigurationList)
-print "###"
 
 buildListsArr = []
 for key in buildConfigurationLists:
     #print  project["objects"][key]["buildConfigurations"]
     buildListsArr = buildListsArr + project["objects"][key]["buildConfigurations"]
 
-print buildListsArr
+#print buildListsArr
 
 for key in buildListsArr:
     version =  project["objects"][key]["name"].lower()
     if version == "release" and  project["objects"][key]["buildSettings"]:
         buildSettingsArr = project["objects"][key]["buildSettings"]
-        print  buildSettingsArr
         bundle_id = buildSettingsArr["PRODUCT_BUNDLE_IDENTIFIER"]
         print bundle_id
         if bundle_id is not None:
-            print dictOfConfig["profile"].jsonContent.has_key(bundle_id)
-            #        print dictOfConfig["profile"].jsonContent
             if dictOfConfig["profile"].jsonContent.has_key(bundle_id):
-                profile = dictOfConfig["profile"].jsonContent[bundle_id]
-                if profile is not None:
-                    print profile
-                    buildSettingsArr["PROVISIONING_PROFILE"] = profile
-                    buildSettingsArr["CODE_SIGN_IDENTITY"] = "iPhone Distribution"
-                    buildSettingsArr["CODE_SIGN_IDENTITY[sdk=iphoneos*]"] = "iPhone Distribution"
+                print dictOfConfig["profile"].jsonContent[bundle_id]
+                b = dictOfConfig["profile"].jsonContent[bundle_id]
+                param = json.loads(b)
+                buildSettingsArr["PROVISIONING_PROFILE"] = param["PROVISIONING_PROFILE"]
+                buildSettingsArr["CODE_SIGN_IDENTITY"] = dictOfConfig["profile"].jsonContent["CODE_SIGN_IDENTITY"]
+                buildSettingsArr["CODE_SIGN_IDENTITY[sdk=iphoneos*]"] = dictOfConfig["profile"].jsonContent["CODE_SIGN_IDENTITY[sdk=iphoneos*]"]
+                if buildSettingsArr.has_key("PROVISIONING_PROFILE_SPECIFIER"):
+                    buildSettingsArr["PROVISIONING_PROFILE_SPECIFIER"] = param["PROVISIONING_PROFILE_SPECIFIER"]
+                    buildSettingsArr["DEVELOPMENT_TEAM"] = dictOfConfig["profile"].jsonContent["DEVELOPMENT_TEAM"]
+
 
     print "-------"
 

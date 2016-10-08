@@ -1182,9 +1182,12 @@ class XcodeProject(PBXDict):
     def backup(self, file_name=None, backup_name=None):
         if not file_name:
             file_name = self.pbxproj_path
-
+        
         if not backup_name:
-            backup_name = "%s.%s.backup" % (file_name, datetime.datetime.now().strftime('%d%m%y-%H%M%S'))
+            backup_name = "%s.backup" % file_name
+        
+#if not backup_name:
+# backup_name = "%s.%s.backup" % (file_name, datetime.datetime.now().strftime('%d%m%y-%H%M%S'))
 
         shutil.copy2(file_name, backup_name)
         return backup_name
